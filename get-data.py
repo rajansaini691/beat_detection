@@ -1,12 +1,14 @@
 """
 Downloads the data used to train the model
 """
+from __future__ import unicode_literals
 import pandas as pd
 import requests
 import json
 import urllib.request
 import os
 from bs4 import BeautifulSoup
+import youtube_dl
 
 
 def youtube_download(url, path, filename, force=False, fmt="wav"):
@@ -25,7 +27,17 @@ def youtube_download(url, path, filename, force=False, fmt="wav"):
         print("exists")
         return None
 
-    # TODO Use youtube-dl instead
+    # Uses youtube-dl to download audio-only
+    ydl_opts = {
+        # 'format': fmt,
+        'format': '140',    # 140 = m4a compression; audio only
+        'postprocessors': [{
+            'key': 'FFmpegExtractAudio',
+            'preferredcodec': fmt
+        }],
+    }
+    with youtube_dl.YoutubeDL(ydl_opts) as ydl:
+        ydl.download([url])
 
 
 def first_youtube_result(keywords, path, filename=None):
@@ -52,7 +64,7 @@ def first_youtube_result(keywords, path, filename=None):
         result,
         path,
         filename if filename is not None else keywords,
-        fmt="webm"
+        fmt="wav"
     )
 
 
