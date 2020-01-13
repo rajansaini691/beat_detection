@@ -31,6 +31,8 @@ def youtube_download(url, path, filename, force=False, fmt="wav"):
     ydl_opts = {
         # 'format': fmt,
         'format': '140',    # 140 = m4a compression; audio only
+        'noplaylist': 'True',
+        'outtmpl': path + "%(title)s.%(ext)s",
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': fmt
