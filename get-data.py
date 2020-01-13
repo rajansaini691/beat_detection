@@ -19,12 +19,12 @@ def youtube_download(url, path, filename, force=False, fmt="wav"):
     Paramaters:
         url         Video url
         filename    Desired filename of the wav file
-        force       If True, will overwrite existing files
+        force       If True, will overwrite existing files of the same name
         fmt         Audio format
     """
     # If file exists, skip
     if os.path.exists(path + filename + "." + fmt) and not force:
-        print("exists")
+        print("exists")     # For debugging
         return None
 
     # Uses youtube-dl to download audio-only
@@ -40,7 +40,7 @@ def youtube_download(url, path, filename, force=False, fmt="wav"):
         ydl.download([url])
 
 
-def first_youtube_result(keywords, path, filename=None):
+def dl_first_youtube_result(keywords, path, filename=None):
     """
     Downloads the first result on youtube when searching using the given
     keywords
@@ -95,13 +95,18 @@ def get_acoustic_brainz(path):
         title = data['metadata']['tags']['title'][0]
         print(title)
 
+        # Make a subdirectory to hold the song and its data
+        song_dir = path + title + "/"
+        if not os.path.exists(song_dir):
+            os.makedirs(song_dir)
+
         # Write json to disk
-        dataFile = open(path + title + ".json", "w")
+        dataFile = open(song_dir + title + ".json", "w")
         dataFile.write(json.dumps(data, indent=4, sort_keys=True))
         dataFile.close()
 
         # Search for top result of title on yt and download
-        first_youtube_result(title, path)
+        dl_first_youtube_result(title, song_dir)
 
 
 if __name__ == "__main__":
