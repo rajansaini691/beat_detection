@@ -1,6 +1,0 @@
-Basic data pipeline:
-	Read from AcousticBrainz dataset -> split wav files by beat time based
-	on JSON (2 categories: beat and no beat)
-
-	First: build a script that visually renders the beats as they get played 
-	so we can validate their accuracy
