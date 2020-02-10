@@ -70,6 +70,30 @@ def dl_first_youtube_result(keywords, path, filename=None):
     )
 
 
+def populate_dataset(path):
+    """
+    Downloads data from the million song dataset
+
+    Parameters:
+        path        Path to the folder to be populated
+    """
+    """
+    Steps:
+        1) Get a MIDI file from the MIDI directory
+        2) Get the name of a song based on the filename
+           (from the MIDI directory)
+        3) Get the name of the artist from the directory name
+        4) Use the above to get keywords
+        5) Find the corresponding hd5 alignment file
+        6) Download the first youtube result satisfying those keywords
+        7) Verify that the MIDI matches the audio using the script in
+           .ext/align_text_matches.py
+           - This should return a number representing the success of the
+             alignment. If the alignment succeeds, write the file. Otherwise,
+             do not.
+    """
+
+
 def get_acoustic_brainz(path):
     """
     Downloads data from the acoustic brainz dataset, which contains
@@ -106,6 +130,15 @@ def get_acoustic_brainz(path):
         dataFile = open(song_dir + title + ".json", "w")
         dataFile.write(json.dumps(data, indent=4, sort_keys=True))
         dataFile.close()
+
+        # TODO Need to take track listing into account somehow and add better
+        # searching (to avoid downloading some idiot's channel with the same
+        # name)
+
+        # Only use keywords that exist
+        # Keywords: title + artist + composer
+        # Seems like title + artist is the best in most situations, even
+        # if the composer exists
 
         # Search for top result of title on yt and download
         dl_first_youtube_result(title, song_dir)

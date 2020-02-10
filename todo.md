@@ -1,11 +1,13 @@
 ## TODOs 
-* [x] Scrape ground truth data from AcousticBrainz dataset
+* [ ] When download is complete, run mv ~/Downloads/cal10kthingy.tar.gz .
+* [ ] Download the lakh MIDI file data set thing
+* [ ] Split the each aligned wav file into a series of fourier vectors labeled "percussion" and "no percussion", using the MIDI file as a guide
+* [ ] We want better beat matching; use percussion from the MIDI to create a correspondence with the audio
 
-* [ ] Get wav files from youtube
-    * Need to determine best search pattern so that the first result provides the
-      desired track
 
-* [ ] Split each wav file into little pieces, where each piece belongs to one of 2 categories:
-  beat and no beat
-* [ ] Visually render beats alongside a playing track so we can validate ground truth data
+## Far future
+* If this ever amounts to anything, see [this page](https://labrosa.ee.columbia.edu/projects/musicsim/uspop2002.html) and [this page](http://millionsongdataset.com/) for citing purposes
 
+### Reproducibility
+* The mp3 samples are from [here](http://millionsongdataset.com/pages/additional-datasets/) and the MIDI files and tools for audio alignment are from [here](https://github.com/craffel/midi-dataset)
+  
