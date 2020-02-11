@@ -9,6 +9,7 @@ import urllib.request
 import os
 from bs4 import BeautifulSoup
 import youtube_dl
+from fuzzywuzzy import fuzz
 
 
 def youtube_download(url, path, filename, force=False, fmt="wav"):
@@ -70,28 +71,87 @@ def dl_first_youtube_result(keywords, path, filename=None):
     )
 
 
-def populate_dataset(path):
+def _get_h5(artist, song, h5):
+    """
+    Helper function to get the h5 file corresponding to the given song
+
+    Parameters:
+        artist      Name of the artist (used to find the folder)
+        song        Name of the song (used to find the actual h5 file)
+
+    Returns:
+        Path to h5 file if found
+        None if not
+    """
+    # Normalize names
+    artist = artist.lower().replace(" ", "_")
+    song = song.lower().replace(" ", "_").replace("'", "_")
+
+    # Find the file
+    try:
+        artistpath = h5 + artist + "/"
+        albums = os.listdir(artistpath)
+
+        for album in albums:
+            albumpath = artistpath + album + "/"
+
+            for songfile in os.listdir(albumpath):
+                # See if the song exists using Levenshtein distance
+                songfile_clean = songfile.lower().replace('-', '.')
+                songfile_clean = songfile_clean.split('.')[1]
+
+                if fuzz.partial_ratio(songfile_clean, song) > 90:
+                    return albumpath + songfile
+
+    except FileNotFoundError:
+        print("Not found")
+        return None
+
+
+def generate_data(lmd, h5, audio):
     """
     Downloads data from the million song dataset
 
     Parameters:
-        path        Path to the folder to be populated
+        lmd         Path to the root of the lakh midi dataset (must end in a /)
+        h5          Path to a directory of HDF5 files
+        audio       Path to the root of the directory to download the audio to
     """
     """
     Steps:
-        1) Get a MIDI file from the MIDI directory
+        1) Get a MIDI file from the MIDI directory [done]
         2) Get the name of a song based on the filename
-           (from the MIDI directory)
-        3) Get the name of the artist from the directory name
-        4) Use the above to get keywords
-        5) Find the corresponding hd5 alignment file
+           (from the MIDI directory) [done]
+        3) Get the name of the artist from the directory name [done]
+        4) Use the above to get keywords [done]
+        5) Find the corresponding hd5 alignment file [done]
         6) Download the first youtube result satisfying those keywords
-        7) Verify that the MIDI matches the audio using the script in
-           .ext/align_text_matches.py
+        7) Verify that the MIDI matches the audio using align_one_file() in
+           ./ext/align_text_matches.py
            - This should return a number representing the success of the
              alignment. If the alignment succeeds, write the file. Otherwise,
              do not.
     """
+    # TODO Once pipeline is working, iterate through all files, not just one
+    artist = 'Michael Jackson'  # TODO Don't hardcode
+    artist_dir = lmd + artist + "/"
+    midifile = os.listdir(artist_dir)[3]
+    songname = midifile.split('.')[0]
+
+    keywords = songname + " " + artist
+
+    # Search for audio features alignment file
+    audio_features_filename = _get_h5(artist, songname, h5)
+
+    if audio_features_filename is None:
+        return  # TODO Should be continue when iterating
+
+    # Download audio
+    # TODO Only download results of a reasonable length
+
+    # Perform alignment
+    print(keywords)
+    print(songname)
 
 
 def get_acoustic_brainz(path):
@@ -145,4 +205,9 @@ def get_acoustic_brainz(path):
 
 
 if __name__ == "__main__":
-    get_acoustic_brainz("./data/acousticbrainz/")
+    # Paths to data (if unclear, refactor names)
+    lmd = "./data/clean_midi/"
+    h5 = "./data/uspopHDF5/"
+    audio = "./data/uspopHDF5/"
+
+    generate_data(lmd, h5, audio)
