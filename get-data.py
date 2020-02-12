@@ -9,6 +9,7 @@ import urllib.request
 import os
 from bs4 import BeautifulSoup
 import youtube_dl
+import time
 from fuzzywuzzy import fuzz
 
 
@@ -43,7 +44,37 @@ def youtube_download(url, path, filename, force=False, fmt="wav"):
         ydl.download([url])
 
 
-def dl_first_youtube_result(keywords, path, filename=None):
+def get_first_result(keywords, maxlen):
+    """
+    Helper function to find the first youtube result using the given keywords
+    with length shorter than maxlen
+
+    Returns a url to the selected video
+    """
+    # Get link to top result
+    query = urllib.parse.quote(keywords)
+    url = "https://www.youtube.com/results?search_query=" + query
+    response = urllib.request.urlopen(url)
+    html = response.read()
+
+    # Find the first video within the maximum length
+    soup = BeautifulSoup(html, 'html.parser')
+    vids = soup.findAll(attrs={'class': 'yt-uix-tile-link'})
+    vid_times = soup.findAll(attrs={'class': 'video-time'})
+
+    # Idea: Select the first result with a reasonable length
+    for vid, vid_time in zip(vids, vid_times):
+        try:
+            x = time.strptime(vid_time.string, "%M:%S")
+            vid_secs = x.tm_sec + x.tm_min*60 + x.tm_hour*3600
+
+            if maxlen is None or vid_secs < maxlen:
+                return "https://www.youtube.com" + vid['href']
+        except ValueError:
+            continue
+
+
+def search_and_download(keywords, path, filename=None, maxlen=None):
     """
     Downloads the first result on youtube when searching using the given
     keywords
@@ -52,19 +83,13 @@ def dl_first_youtube_result(keywords, path, filename=None):
         keywords    The keywords to be searched
         path        Folder to write the downloaded video
         filename    Name of the file to be written
+        maxlen      Maximum length to accept
     """
-    # Get link to top result
-    query = urllib.parse.quote(keywords)
-    url = "https://www.youtube.com/results?search_query=" + query
-    response = urllib.request.urlopen(url)
-    html = response.read()
-    soup = BeautifulSoup(html, 'html.parser')
-    vid = soup.find(attrs={'class': 'yt-uix-tile-link'})
-    result = "https://www.youtube.com" + vid['href']
+    link = get_first_result(keywords, maxlen)
 
     # Download result to disk
     youtube_download(
-        result,
+        link,
         path,
         filename if filename is not None else keywords,
         fmt="wav"
@@ -148,6 +173,7 @@ def generate_data(lmd, h5, audio):
 
     # Download audio
     # TODO Only download results of a reasonable length
+    search_and_download(keywords, audio, songname)
 
     # Perform alignment
     print(keywords)
@@ -201,7 +227,7 @@ def get_acoustic_brainz(path):
         # if the composer exists
 
         # Search for top result of title on yt and download
-        dl_first_youtube_result(title, song_dir)
+        search_and_download(title, song_dir)
 
 
 if __name__ == "__main__":
