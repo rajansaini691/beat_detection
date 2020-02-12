@@ -34,7 +34,7 @@ def youtube_download(url, path, filename, force=False, fmt="wav"):
         # 'format': fmt,
         'format': '140',    # 140 = m4a compression; audio only
         'noplaylist': 'True',
-        'outtmpl': path + "%(title)s.%(ext)s",
+        'outtmpl': path + filename + ".%(ext)s",
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': fmt
@@ -150,7 +150,7 @@ def generate_data(lmd, h5, audio):
         3) Get the name of the artist from the directory name [done]
         4) Use the above to get keywords [done]
         5) Find the corresponding hd5 alignment file [done]
-        6) Download the first youtube result satisfying those keywords
+        6) Download the first youtube result satisfying those keywords [done]
         7) Verify that the MIDI matches the audio using align_one_file() in
            ./ext/align_text_matches.py
            - This should return a number representing the success of the
@@ -172,8 +172,8 @@ def generate_data(lmd, h5, audio):
         return  # TODO Should be continue when iterating
 
     # Download audio
-    # TODO Only download results of a reasonable length
-    search_and_download(keywords, audio, songname)
+    # TODO Max len should depend on MIDI
+    search_and_download(keywords, audio, filename=songname, maxlen=500)
 
     # Perform alignment
     print(keywords)
@@ -234,6 +234,6 @@ if __name__ == "__main__":
     # Paths to data (if unclear, refactor names)
     lmd = "./data/clean_midi/"
     h5 = "./data/uspopHDF5/"
-    audio = "./data/uspopHDF5/"
+    audio = "./data/generated/audio/"
 
     generate_data(lmd, h5, audio)
