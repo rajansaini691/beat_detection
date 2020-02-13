@@ -176,8 +176,6 @@ def generate_data(lmd, h5, audio):
     search_and_download(keywords, audio, filename=songname, maxlen=500)
 
     # Perform alignment
-    print(keywords)
-    print(songname)
 
 
 def get_acoustic_brainz(path):
@@ -218,7 +216,7 @@ def get_acoustic_brainz(path):
         dataFile.close()
 
         # TODO Need to take track listing into account somehow and add better
-        # searching (to avoid downloading some idiot's channel with the same
+        # searching (to avoid downloading someone else's channel with the same
         # name)
 
         # Only use keywords that exist
