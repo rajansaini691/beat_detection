@@ -105,8 +105,8 @@ def align_one_file(audio_filename, midi_filename, audio_features_filename=None,
     try:
         m = pretty_midi.PrettyMIDI(midi_filename)
     except Exception as e:
-        print 'Could not parse {}: {}'.format(
-            os.path.split(midi_filename)[1], traceback.format_exc(e))
+        print('Could not parse {}: {}'.format(
+            os.path.split(midi_filename)[1], traceback.format_exc(e)))
         return
 
     midi_features = {}
@@ -119,17 +119,17 @@ def align_one_file(audio_filename, midi_filename, audio_features_filename=None,
             midi_features = deepdish.io.load(midi_features_filename)
         # If there was a problem reading, force re-cration
         except Exception as e:
-            print "Error reading {}: {}".format(
-                midi_features_filename, traceback.format_exc(e))
-            midi_features = {}
+            print("Error reading {}: {}".format(
+                midi_features_filename, traceback.format_exc(e)),
+                    midi_features={})
 
     if not midi_features:
         # Generate synthetic MIDI CQT
         try:
             midi_features['gram'] = feature_extraction.midi_cqt(m)
         except Exception as e:
-            print "Error creating CQT for {}: {}".format(
-                os.path.split(midi_filename)[1], traceback.format_exc(e))
+            print("Error creating CQT for {}: {}".format(
+                os.path.split(midi_filename)[1], traceback.format_exc(e)))
             return
         if midi_features_filename is not None:
             try:
@@ -138,8 +138,8 @@ def align_one_file(audio_filename, midi_filename, audio_features_filename=None,
                 deepdish.io.save(
                     midi_features_filename, midi_features)
             except Exception as e:
-                print "Error writing {}: {}".format(
-                    os.path.split(midi_filename)[1], traceback.format_exc(e))
+                print("Error writing {}: {}".format(
+                    os.path.split(midi_filename)[1], traceback.format_exc(e)))
                 return
 
     audio_features = {}
@@ -152,8 +152,8 @@ def align_one_file(audio_filename, midi_filename, audio_features_filename=None,
             audio_features = deepdish.io.load(audio_features_filename)
         # If there was a problem reading, force re-cration
         except Exception as e:
-            print "Error reading {}: {}".format(
-                audio_features_filename, traceback.format_exc(e))
+            print("Error reading {}: {}".format(
+                audio_features_filename, traceback.format_exc(e)))
             audio_features = {}
 
     # Cache audio CQT
@@ -165,8 +165,8 @@ def align_one_file(audio_filename, midi_filename, audio_features_filename=None,
             # Compute audio cqt
             audio_features['gram'] = feature_extraction.audio_cqt(audio)
         except Exception as e:
-            print "Error creating CQT for {}: {}".format(
-                os.path.split(audio_filename)[1], traceback.format_exc(e))
+            print("Error creating CQT for {}: {}".format(
+                os.path.split(audio_filename)[1], traceback.format_exc(e)))
             return
         if audio_features_filename is not None:
             try:
@@ -174,8 +174,8 @@ def align_one_file(audio_filename, midi_filename, audio_features_filename=None,
                 check_subdirectories(audio_features_filename)
                 deepdish.io.save(audio_features_filename, audio_features)
             except Exception as e:
-                print "Error writing {}: {}".format(
-                    os.path.split(audio_filename)[1], traceback.format_exc(e))
+                print("Error writing {}: {}".format(
+                    os.path.split(audio_filename)[1], traceback.format_exc(e)))
                 return
 
     try:
@@ -183,13 +183,13 @@ def align_one_file(audio_filename, midi_filename, audio_features_filename=None,
         size = midi_features['gram'].shape[0]*audio_features['gram'].shape[0]
         # If > 1 GB, skip
         if (size*64/8e9 > 2):
-            print (
+            print((
                 "Distance matrix for {} and {} would be {} GB because the "
                 "CQTs have shape {} and {}".format(
                     os.path.split(audio_filename)[1],
                     os.path.split(midi_filename)[1],
                     size*64/8e9, audio_features['gram'].shape[0],
-                    midi_features['gram'].shape[0]))
+                    midi_features['gram'].shape[0])))
             return
 
         # Get distance matrix
@@ -213,10 +213,10 @@ def align_one_file(audio_filename, midi_filename, audio_features_filename=None,
         # very good alignment.
         score = np.clip(2*(1 - score), 0, 1)
     except Exception as e:
-        print "Error performing DTW for {} and {}: {}".format(
+        print("Error performing DTW for {} and {}: {}".format(
             os.path.split(audio_filename)[1],
             os.path.split(midi_filename)[1],
-            traceback.format_exc(e))
+            traceback.format_exc(e)))
         return
 
     # Write out the aligned file
@@ -232,8 +232,8 @@ def align_one_file(audio_filename, midi_filename, audio_features_filename=None,
             check_subdirectories(output_midi_filename)
             m.write(output_midi_filename)
         except Exception as e:
-            print "Error writing aligned .mid for {}: {}".format(
-                os.path.split(midi_filename)[1], traceback.format_exc(e))
+            print("Error writing aligned .mid for {}: {}".format(
+                os.path.split(midi_filename)[1], traceback.format_exc(e)))
             return
 
     if output_diagnostics_filename is not None:
@@ -256,9 +256,9 @@ def align_one_file(audio_filename, midi_filename, audio_features_filename=None,
                 **additional_diagnostics)
             deepdish.io.save(output_diagnostics_filename, diagnostics)
         except Exception as e:
-            print "Error writing diagnostics for {} and {}: {}".format(
+            print("Error writing diagnostics for {} and {}: {}".format(
                 os.path.split(audio_filename)[1],
-                os.path.split(midi_filename)[1], traceback.format_exc(e))
+                os.path.split(midi_filename)[1], traceback.format_exc(e)))
             return
     return aligned_midi_indices, aligned_audio_indices, score
 
