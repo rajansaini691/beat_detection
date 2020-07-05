@@ -10,6 +10,7 @@ import os
 from bs4 import BeautifulSoup
 import youtube_dl
 import time
+from ext.align_text_matches import align_one_file
 from fuzzywuzzy import fuzz
 
 
@@ -105,7 +106,7 @@ def _get_h5(artist, song, h5):
         song        Name of the song (used to find the actual h5 file)
 
     Returns:
-        Path to h5 file if found
+        Full path to h5 file if found
         None if not
     """
     # Normalize names
@@ -163,6 +164,7 @@ def generate_data(lmd, h5, audio):
     midifile = os.listdir(artist_dir)[3]
     songname = midifile.split('.')[0]
 
+    # TODO Use multiple sets of keywords (add audio only to the end, for ex)
     keywords = songname + " " + artist
 
     # Search for audio features alignment file
@@ -175,7 +177,18 @@ def generate_data(lmd, h5, audio):
     # TODO Max len should depend on MIDI
     search_and_download(keywords, audio, filename=songname, maxlen=500)
 
+    # TODO Come up with a place to store generated features (MIDI and audio)
     # Perform alignment
+    alignment_results = align_one_file(
+            audio + songname + ".wav",
+            artist_dir + midifile,
+            audio_features_filename=audio_features_filename,
+            output_diagnostics_filename=audio + songname + "-align.h5",
+            midi_features_filename=audio + songname + "-midi-features.h5",
+            output_midi_filename=audio + songname + "-midi.mid"
+    )
+
+    print(alignment_results)
 
 
 def get_acoustic_brainz(path):

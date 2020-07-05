@@ -1,3 +1,10 @@
+import itertools
+import json
+import ext.feature_extraction as feature_extraction
+import ext.djitw as djitw
+import deepdish
+import ext.whoosh_search as whoosh_search
+import traceback
 import numpy as np
 import librosa
 import pretty_midi
@@ -5,13 +12,6 @@ import joblib
 import os
 import sys
 sys.path.append('..')
-import itertools
-import json
-import feature_extraction
-import djitw
-import deepdish
-import whoosh_search
-import traceback
 
 BASE_DATA_PATH = '../data/'
 MIDI_FOLDER = 'clean_midi'
@@ -157,7 +157,7 @@ def align_one_file(audio_filename, midi_filename, audio_features_filename=None,
             audio_features = {}
 
     # Cache audio CQT
-    if not audio_features:
+    if not audio_features or not 'gram' in audio_features:
         try:
             # Read in audio data
             audio, fs = librosa.load(
@@ -178,6 +178,10 @@ def align_one_file(audio_filename, midi_filename, audio_features_filename=None,
                     os.path.split(audio_filename)[1], traceback.format_exc(e)))
                 return
 
+    print("MIDI")
+    print(midi_features)
+    print("Audio")
+    print(audio_features.keys())
     try:
         # Check that the distance matrix will not be too big before computing
         size = midi_features['gram'].shape[0]*audio_features['gram'].shape[0]
@@ -256,9 +260,10 @@ def align_one_file(audio_filename, midi_filename, audio_features_filename=None,
                 **additional_diagnostics)
             deepdish.io.save(output_diagnostics_filename, diagnostics)
         except Exception as e:
-            print("Error writing diagnostics for {} and {}: {}".format(
-                os.path.split(audio_filename)[1],
-                os.path.split(midi_filename)[1], traceback.format_exc(e)))
+            print(f"""Error writing diagnostics for
+                    {os.path.split(audio_filename)[1]} and
+                    {os.path.split(midi_filename)[1]}:
+                    {traceback.format_exc(e)}""")
             return
     return aligned_midi_indices, aligned_audio_indices, score
 
