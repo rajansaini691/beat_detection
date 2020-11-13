@@ -8,10 +8,11 @@ import json
 import urllib.request
 import os
 from bs4 import BeautifulSoup
-import youtube_dl
+from ytsearch import youtube as yts
 import time
 from ext.align_text_matches import align_one_file
 from fuzzywuzzy import fuzz
+import youtube_dl
 
 
 def youtube_download(url, path, filename, force=False, fmt="wav"):
@@ -26,8 +27,8 @@ def youtube_download(url, path, filename, force=False, fmt="wav"):
         fmt         Audio format
     """
     # If file exists, skip
-    if os.path.exists(path + filename + "." + fmt) and not force:
-        print("exists")     # For debugging
+    if os.path.exists(f"{path}/{filename}.{fmt}") and not force:
+        print(f"{path}/{filename}.{fmt} exists")     # For debugging
         return None
 
     # Uses youtube-dl to download audio-only
@@ -35,7 +36,7 @@ def youtube_download(url, path, filename, force=False, fmt="wav"):
         # 'format': fmt,
         'format': '140',    # 140 = m4a compression; audio only
         'noplaylist': 'True',
-        'outtmpl': path + filename + ".%(ext)s",
+        'outtmpl': path + "/" + filename + ".%(ext)s",
         'postprocessors': [{
             'key': 'FFmpegExtractAudio',
             'preferredcodec': fmt
@@ -52,27 +53,15 @@ def get_first_result(keywords, maxlen):
 
     Returns a url to the selected video
     """
-    # Get link to top result
-    query = urllib.parse.quote(keywords)
-    url = "https://www.youtube.com/results?search_query=" + query
-    response = urllib.request.urlopen(url)
-    html = response.read()
-
-    # Find the first video within the maximum length
-    soup = BeautifulSoup(html, 'html.parser')
-    vids = soup.findAll(attrs={'class': 'yt-uix-tile-link'})
-    vid_times = soup.findAll(attrs={'class': 'video-time'})
-
-    # Idea: Select the first result with a reasonable length
-    for vid, vid_time in zip(vids, vid_times):
-        try:
-            x = time.strptime(vid_time.string, "%M:%S")
-            vid_secs = x.tm_sec + x.tm_min*60 + x.tm_hour*3600
-
-            if maxlen is None or vid_secs < maxlen:
-                return "https://www.youtube.com" + vid['href']
-        except ValueError:
-            continue
+    # TODO Iterate through results to get top result within time constraints
+    raw = yts.raw_search(keywords)
+    suffix = None
+    for item in raw['items']:
+        if item['kind'] == 'youtube#searchResult' and item['id']['kind'] == 'youtube#video':
+            print(item['id'])
+            suffix = item['id']['videoId']
+            break
+    return "https://youtube.com/watch?v=" + suffix
 
 
 def search_and_download(keywords, path, filename=None, maxlen=None):
@@ -86,15 +75,18 @@ def search_and_download(keywords, path, filename=None, maxlen=None):
         filename    Name of the file to be written
         maxlen      Maximum length to accept
     """
-    link = get_first_result(keywords, maxlen)
+    try:
+        link = get_first_result(keywords, maxlen)
 
-    # Download result to disk
-    youtube_download(
-        link,
-        path,
-        filename if filename is not None else keywords,
-        fmt="wav"
-    )
+        # Download result to disk
+        youtube_download(
+            link,
+            path,
+            filename if filename is not None else keywords,
+            fmt="wav"
+        )
+    except youtube_dl.utils.DownloadError:
+        search_and_download(keywords, path, filename, maxlen)
 
 
 def _get_h5(artist, song, h5):
@@ -241,10 +233,33 @@ def get_acoustic_brainz(path):
         search_and_download(title, song_dir)
 
 
+def get_isophonics(rootdir):
+    """
+    Prerequisites: Need to have isophonics annotations in ./data/
+
+    Iterate through csv files and download their song from youtube
+    """
+    for subdir, dirs, files in os.walk(rootdir):
+        for f in files:
+            if f.endswith("txt"):
+                filename = os.path.splitext(f)[0]
+
+                # If song already downloaded, skip
+                if os.path.exists(f"{subdir}/{filename}.wav"):
+                    print("exists!")     # For debugging
+                    continue
+
+                # Do some crazy parsing to get the song name from the filename
+                song_name = os.path.splitext(f)[0][5:].replace("_", " ")
+
+                search_and_download(song_name, subdir, filename=filename)
+
+
 if __name__ == "__main__":
     # Paths to data (if unclear, refactor names)
     lmd = "./data/clean_midi/"
     h5 = "./data/uspopHDF5/"
     audio = "./data/generated/audio/"
+    isophonics = "./data"
 
-    generate_data(lmd, h5, audio)
+    get_isophonics(isophonics)
